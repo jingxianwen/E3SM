@@ -218,6 +218,9 @@ contains
                               use_rad_dt_cosz, spectralflux,   &
                               do_aerosol_rad, fixed_total_solar_irradiance
 
+      ! Variables added to radiation namelist by U-MICH
+      !namelist /radiation_nl/ flag_mc6, flag_srf_emis, flag_rtr2 
+
       ! Read the namelist, only if called from master process
       ! TODO: better documentation and cleaner logic here?
       if (masterproc) then
@@ -245,6 +248,10 @@ contains
       call mpibcast(spectralflux, 1, mpi_logical, mstrid, mpicom, ierr)
       call mpibcast(do_aerosol_rad, 1, mpi_logical, mstrid, mpicom, ierr)
       call mpibcast(fixed_total_solar_irradiance, 1, mpi_real8, mstrid, mpicom, ierr)
+      ! Broadcast U-MICH namelist variables
+      !call mpibcast(flag_mc6, 1, mpi_logical, mstrid, mpicom, ierr) 
+      !call mpibcast(flag_srf_emis, 1, mpi_logical, mstrid, mpicom, ierr) 
+      !call mpibcast(flag_rtr2, 1, mpi_logical, mstrid, mpicom, ierr) 
 #endif
 
       ! Set module data
@@ -268,6 +275,8 @@ contains
                          iradsw, iradlw, irad_always, &
                          use_rad_dt_cosz, spectralflux, &
                          do_aerosol_rad, fixed_total_solar_irradiance
+         !write(iulog,*) 'RRTMGP U-MICH LW radiation scheme parameters:'
+         !write(iulog,10) flag_mc6, flag_srf_emis, flag_rtr2 
       end if
    10 format('  LW coefficents file: ',                                a/, &
              '  SW coefficents file: ',                                a/, &
@@ -1588,6 +1597,9 @@ contains
       type(ty_optical_props_1scl) :: aerosol_optics_lw
       type(ty_optical_props_1scl) :: cloud_optics_lw
 
+      ! Use 2-stream optics for U-MICH LW-scattering radiation 
+      !type(ty_optical_props_2str) :: cloud_optics_lw_scat
+
       integer :: ncol, icall
 
       ! Number of physics columns in this "chunk"; used in multiple places
@@ -1609,6 +1621,9 @@ contains
       ! TODO: set this more intelligently?
       surface_emissivity(1:nlwbands,1:ncol) = 1.0_r8
 
+      ! Use spectral observational surface emissivity, U-MICH
+      !surface_emissivity(1:nlwbands,1:ncol) = ???
+
       ! Make sure temperatures are within range for aqua planets
       if (aqua_planet) then
          call clip_values(tmid(1:ncol,1:nlev_rad)  , k_dist_lw%get_temp_min(), k_dist_lw%get_temp_max(), varname='tmid', warn=.true.)
@@ -1620,6 +1635,14 @@ contains
       call handle_error(cloud_optics_lw%alloc_1scl(ncol, nlev_rad, k_dist_lw, name='longwave cloud optics'))
       call set_cloud_optics_lw(state, pbuf, k_dist_lw, cloud_optics_lw)
       call t_stopf('longwave cloud optics')
+
+      ! Do U-Mich longwave cloud optics calculations
+      !if (flag_mc6) then  
+      !call t_startf('longwave cloud optics')
+      !call handle_error(cloud_optics_lw_scat%alloc_2str(ncol, nlev_rad, k_dist_lw, name='longwave cloud optics'))
+      !call set_cloud_optics_lw_scat(state, pbuf, k_dist_lw, cloud_optics_lw)
+      !call t_stopf('longwave cloud optics')
+      !end if
 
       ! Initialize aerosol optics; passing only the wavenumber bounds for each
       ! "band" rather than passing the full spectral discretization object, and
