@@ -103,6 +103,11 @@ module radiation
    ! Disabled when value is less than 0.
    real(r8) :: fixed_total_solar_irradiance = -1
 
+   ! U-MICH LW radiation switches -->
+   logical :: flag_mc6=.false.
+   logical :: flag_srf_emis=.false.
+   logical :: flag_rtr2=.false.
+
    ! Model data that is not controlled by namelist fields specifically follows
    ! below.
 
@@ -210,15 +215,15 @@ contains
       integer :: dtime  ! timestep size
       character(len=*), parameter :: subroutine_name = 'radiation_readnl'
       character(len=cl) :: rrtmgp_coefficients_file_lw, rrtmgp_coefficients_file_sw
-
+      
       ! Variables defined in namelist
       namelist /radiation_nl/ rrtmgp_coefficients_file_lw,     &
                               rrtmgp_coefficients_file_sw,     &
                               iradsw, iradlw, irad_always,     &
                               use_rad_dt_cosz, spectralflux,   &
-                              do_aerosol_rad, fixed_total_solar_irradiance
-
-      ! Variables added to radiation namelist by U-MICH
+                              do_aerosol_rad, fixed_total_solar_irradiance, &
+                              flag_mc6, flag_srf_emis, flag_rtr2
+      ! Variables added to radiation namelist by U-MICH -->
       !namelist /radiation_nl/ flag_mc6, flag_srf_emis, flag_rtr2 
 
       ! Read the namelist, only if called from master process
@@ -248,10 +253,10 @@ contains
       call mpibcast(spectralflux, 1, mpi_logical, mstrid, mpicom, ierr)
       call mpibcast(do_aerosol_rad, 1, mpi_logical, mstrid, mpicom, ierr)
       call mpibcast(fixed_total_solar_irradiance, 1, mpi_real8, mstrid, mpicom, ierr)
-      ! Broadcast U-MICH namelist variables
-      !call mpibcast(flag_mc6, 1, mpi_logical, mstrid, mpicom, ierr) 
-      !call mpibcast(flag_srf_emis, 1, mpi_logical, mstrid, mpicom, ierr) 
-      !call mpibcast(flag_rtr2, 1, mpi_logical, mstrid, mpicom, ierr) 
+      ! Broadcast U-MICH namelist variables -->
+      call mpibcast(flag_mc6, 1, mpi_logical, mstrid, mpicom, ierr) 
+      call mpibcast(flag_srf_emis, 1, mpi_logical, mstrid, mpicom, ierr) 
+      call mpibcast(flag_rtr2, 1, mpi_logical, mstrid, mpicom, ierr) 
 #endif
 
       ! Set module data
@@ -275,8 +280,9 @@ contains
                          iradsw, iradlw, irad_always, &
                          use_rad_dt_cosz, spectralflux, &
                          do_aerosol_rad, fixed_total_solar_irradiance
-         !write(iulog,*) 'RRTMGP U-MICH LW radiation scheme parameters:'
-         !write(iulog,10) flag_mc6, flag_srf_emis, flag_rtr2 
+         ! Write U-MICH swithces to log file -->
+         write(iulog,*) 'RRTMGP U-MICH LW radiation scheme parameters:'
+         write(iulog,10) flag_mc6, flag_srf_emis, flag_rtr2 
       end if
    10 format('  LW coefficents file: ',                                a/, &
              '  SW coefficents file: ',                                a/, &
@@ -445,6 +451,9 @@ contains
       ! For optics
       use cloud_rad_props, only: cloud_rad_props_init
 
+      ! For U-MICH MC6 ice cloud optics -->
+      use mc6_ice_optics, only: mc6_ice_optics_init
+
       ! Physics state is going to be needed for perturbation growth tests, but we
       ! have yet to implement this in RRTMGP. It is a vector because at the point
       ! where this subroutine is called, physics_state has not subset for a
@@ -482,6 +491,12 @@ contains
 
       ! Initialize cloud optics
       call cloud_rad_props_init()
+
+      ! U-MICH added ice LW scattering optics-->
+      if (flag_mc6) then
+      ! Initialize U-MICH MC6 ice cloud optics
+         call mc6_ice_optics_init()
+      end if
 
       ! Initialize output fields for offline driver.
       ! TODO: do we need to keep this functionality? Where is the offline driver?
@@ -1559,11 +1574,16 @@ contains
       use camsrfexch, only: cam_in_t
       use mo_rrtmgp_clr_all_sky, only: rte_lw
       use mo_fluxes_byband, only: ty_fluxes_byband
-      use mo_optical_props, only: ty_optical_props_1scl
+      !use mo_optical_props, only: ty_optical_props_1scl !commented, U-MICH
+      !added, U-MICH -->
+      use mo_optical_props, only: ty_optical_props_1scl,ty_optical_props_2str
+
       use mo_gas_concentrations, only: ty_gas_concs
       use radiation_state, only: set_rad_state
       use radiation_utils, only: calculate_heating_rate, clip_values
-      use cam_optics, only: set_cloud_optics_lw, set_aerosol_optics_lw
+      !U-MICH add set_cloud_optics_lw_scat -->
+      use cam_optics, only: set_cloud_optics_lw, set_aerosol_optics_lw &
+                           ,set_cloud_optics_lw_scat 
       use cam_control_mod, only: aqua_planet
 
       ! Inputs
@@ -1597,8 +1617,8 @@ contains
       type(ty_optical_props_1scl) :: aerosol_optics_lw
       type(ty_optical_props_1scl) :: cloud_optics_lw
 
-      ! Use 2-stream optics for U-MICH LW-scattering radiation 
-      !type(ty_optical_props_2str) :: cloud_optics_lw_scat
+      ! Use 2-stream optics for U-MICH LW-scattering radiation -->
+      type(ty_optical_props_2str) :: cloud_optics_lw_scat
 
       integer :: ncol, icall
 
@@ -1621,8 +1641,8 @@ contains
       ! TODO: set this more intelligently?
       surface_emissivity(1:nlwbands,1:ncol) = 1.0_r8
 
-      ! Use spectral observational surface emissivity, U-MICH
-      !surface_emissivity(1:nlwbands,1:ncol) = ???
+      ! Use spectral observational surface emissivity, U-MICH -->
+      !surface_emissivity(1:nlwbands,1:ncol) = ???  (to be updated)
 
       ! Make sure temperatures are within range for aqua planets
       if (aqua_planet) then
@@ -1630,19 +1650,20 @@ contains
          call clip_values(tint(1:ncol,1:nlev_rad+1), k_dist_lw%get_temp_min(), k_dist_lw%get_temp_max(), varname='tint', warn=.true.)
       end if
 
-      ! Do longwave cloud optics calculations
-      call t_startf('longwave cloud optics')
-      call handle_error(cloud_optics_lw%alloc_1scl(ncol, nlev_rad, k_dist_lw, name='longwave cloud optics'))
-      call set_cloud_optics_lw(state, pbuf, k_dist_lw, cloud_optics_lw)
-      call t_stopf('longwave cloud optics')
-
-      ! Do U-Mich longwave cloud optics calculations
-      !if (flag_mc6) then  
-      !call t_startf('longwave cloud optics')
-      !call handle_error(cloud_optics_lw_scat%alloc_2str(ncol, nlev_rad, k_dist_lw, name='longwave cloud optics'))
-      !call set_cloud_optics_lw_scat(state, pbuf, k_dist_lw, cloud_optics_lw)
-      !call t_stopf('longwave cloud optics')
-      !end if
+      ! U-MICH added optional scattering longwave optics -->
+      if (flag_mc6) then  
+      ! Do U-MICH MC6 scattering longwave cloud optics calculations -->
+         call t_startf('MC6 longwave cloud optics (U-MICH)')
+         call handle_error(cloud_optics_lw_scat%alloc_2str(ncol, nlev_rad, k_dist_lw, name='longwave cloud optics'))
+         call set_cloud_optics_lw_scat(state, pbuf, k_dist_lw, cloud_optics_lw_scat)
+         call t_stopf('MC6 longwave cloud optics (U-MICH)')
+     else  ! RRTMGP default LW optics
+         ! Do longwave cloud optics calculations
+         call t_startf('longwave cloud optics')
+         call handle_error(cloud_optics_lw%alloc_1scl(ncol, nlev_rad, k_dist_lw, name='longwave cloud optics'))
+         call set_cloud_optics_lw(state, pbuf, k_dist_lw, cloud_optics_lw)
+         call t_stopf('longwave cloud optics')
+      end if
 
       ! Initialize aerosol optics; passing only the wavenumber bounds for each
       ! "band" rather than passing the full spectral discretization object, and
@@ -1677,17 +1698,32 @@ contains
 
             ! Do longwave radiative transfer calculations
             call t_startf('rad_calculations_lw')
-            call handle_error(rte_lw( &
-               k_dist_lw, gas_concentrations, &
-               pmid(1:ncol,1:nlev_rad), tmid(1:ncol,1:nlev_rad), &
-               pint(1:ncol,1:nlev_rad+1), tint(1:ncol,nlev_rad+1), &
-               surface_emissivity(1:nlwbands,1:ncol), &
-               cloud_optics_lw, &
-               fluxes_allsky, fluxes_clrsky, &
-               aer_props=aerosol_optics_lw, &
-               t_lev=tint(1:ncol,1:nlev_rad+1), &
-               n_gauss_angles=1 & ! Set to 3 for consistency with RRTMG
-            ))
+            ! U-MICH added optional scattering longwave radiative transfer -->
+            if (flag_mc6) then
+               call handle_error(rte_lw( &
+                  k_dist_lw, gas_concentrations, &
+                  pmid(1:ncol,1:nlev_rad), tmid(1:ncol,1:nlev_rad), &
+                  pint(1:ncol,1:nlev_rad+1), tint(1:ncol,nlev_rad+1), &
+                  surface_emissivity(1:nlwbands,1:ncol), &
+                  cloud_optics_lw_scat, &
+                  fluxes_allsky, fluxes_clrsky, &
+                  aer_props=aerosol_optics_lw, &
+                  t_lev=tint(1:ncol,1:nlev_rad+1), &
+                  n_gauss_angles=1 & ! Set to 3 for consistency with RRTMG
+               ))
+            else ! RRTMGP default longwave radiative transfer
+               call handle_error(rte_lw( &
+                  k_dist_lw, gas_concentrations, &
+                  pmid(1:ncol,1:nlev_rad), tmid(1:ncol,1:nlev_rad), &
+                  pint(1:ncol,1:nlev_rad+1), tint(1:ncol,nlev_rad+1), &
+                  surface_emissivity(1:nlwbands,1:ncol), &
+                  cloud_optics_lw, &
+                  fluxes_allsky, fluxes_clrsky, &
+                  aer_props=aerosol_optics_lw, &
+                  t_lev=tint(1:ncol,1:nlev_rad+1), &
+                  n_gauss_angles=1 & ! Set to 3 for consistency with RRTMG
+               ))
+            end if
             call t_stopf('rad_calculations_lw')
 
             ! Calculate heating rates
@@ -1709,7 +1745,9 @@ contains
       ! Free fluxes and optical properties
       call free_optics_lw(cloud_optics_lw)
       call free_optics_lw(aerosol_optics_lw)
-
+      if (flag_mc6) then
+         call free_optics_lw_scat(cloud_optics_lw_scat)
+      end if
    end subroutine radiation_driver_lw
 
    !----------------------------------------------------------------------------
@@ -2271,6 +2309,16 @@ contains
       if (allocated(optics%tau)) deallocate(optics%tau)
       call optics%finalize()
    end subroutine free_optics_lw
+
+   ! Added by U-MICH -->
+   subroutine free_optics_lw_scat(optics)
+      use mo_optical_props, only: ty_optical_props_2str
+      type(ty_optical_props_2str), intent(inout) :: optics
+      if (allocated(optics%tau)) deallocate(optics%tau)
+      if (allocated(optics%ssa)) deallocate(optics%ssa)
+      if (allocated(optics%g)) deallocate(optics%g)
+      call optics%finalize()
+   end subroutine free_optics_lw_scat
 
    subroutine set_gas_concentrations(icall, state, pbuf, &
                                      gas_concentrations, &

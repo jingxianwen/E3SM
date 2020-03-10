@@ -12,7 +12,7 @@ module cam_optics
    public cam_optics_type, &
           set_cloud_optics_sw, &
           set_cloud_optics_lw, &
-          !set_cloud_optics_lw_scat, &   !U-MICH added.
+          set_cloud_optics_lw_scat, &   !U-MICH added.
           set_aerosol_optics_sw, &
           set_aerosol_optics_lw
 
@@ -313,7 +313,7 @@ contains
       use physics_buffer, only: physics_buffer_desc, pbuf_get_field, &
                                 pbuf_get_index
       use cloud_rad_props, only: get_liquid_optics_lw, &
-                                 get_ice_optics_lw, &
+                                 get_ice_optics_lw_scat, &
                                  get_snow_optics_lw
       use radconstants, only: nlwbands
 
@@ -781,7 +781,8 @@ contains
       use physics_types, only: physics_state
       use physics_buffer, only: physics_buffer_desc, &
                                 pbuf_get_field, pbuf_get_index
-      use mo_optical_props, only: ty_optical_props_1scl
+      !use mo_optical_props, only: ty_optical_props_1scl
+      use mo_optical_props, only: ty_optical_props_2str
       use mo_gas_optics_rrtmgp, only: ty_gas_optics_rrtmgp
       use mcica_subcol_gen, only: mcica_subcol_mask
 
@@ -839,7 +840,7 @@ contains
 
       ! Check values
       call assert_range(optics_cam%optical_depth, 0._r8, 1e20_r8, &
-                        'set_cloud_optics_lw: optics_cam%optical_depth')
+                        'set_cloud_optics_lw_scat: optics_cam%optical_depth')
 
       ! Send cloud optics to history buffer
       call output_cloud_optics_lw(state, optics_cam)
@@ -867,7 +868,10 @@ contains
       ! as well.
       ! NOTE: incoming optics should be in-cloud quantites and not grid-averaged 
       ! quantities!
-      optics_out%tau = 0
+      optics_out%tau(:,:,:) = 0._r8
+      optics_out%ssa(:,:,:) = 1._r8
+      optics_out%g(:,:,:) = 0._r8
+
       do ilev_cam = 1,pver
 
          ! Get level index on CAM grid (i.e., the index that this rad level
@@ -881,8 +885,12 @@ contains
                if (iscloudy(igpt,icol,ilev_cam) .and. (combined_cloud_fraction(icol,ilev_cam) > 0._r8) ) then
                   iband = kdist%convert_gpt2band(igpt)
                   optics_out%tau(icol,ilev_rad,igpt) = optics_cam%optical_depth(icol,ilev_cam,iband)
+                  optics_out%ssa(icol,ilev_rad,igpt) = optics_cam%single_scattering_albedo(icol,ilev_cam,iband)
+                  optics_out%g(icol,ilev_rad,igpt) = optics_cam%assymmetry_parameter(icol,ilev_cam,iband)
                else
                   optics_out%tau(icol,ilev_rad,igpt) = 0._r8
+                  optics_out%ssa(icol,ilev_rad,igpt) = 1._r8
+                  optics_out%g(icol,ilev_rad,igpt) = 0._r8
                end if
             end do
          end do
@@ -899,7 +907,7 @@ contains
 
       ! Check values
       call assert_range(optics_out%tau, 0._r8, 1e20_r8, &
-                        'set_cloud_optics_lw: optics_out%tau')
+                        'set_cloud_optics_lw_scat: optics_out%tau')
 
       ! Check cloud optics
       call handle_error(optics_out%validate())

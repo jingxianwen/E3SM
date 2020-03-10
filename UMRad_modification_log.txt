@@ -1,0 +1,102 @@
+
+
+Files modified:
+
+1. $E3SM_root/components/cam/src/physics/rrtmgp/radiation.F90
+  1.a) in module statements:
+      ! U-MICH LW radiation switches -->
+      logical :: flag_mc6=.false.
+      logical :: flag_srf_emis=.false.
+      logical :: flag_rtr2=.false.
+
+  1.b) in subroutine radiation_readnl()
+      ! Variables added to radiation namelist by U-MICH -->
+      namelist /radiation_nl/ flag_mc6, flag_srf_emis, flag_rtr2
+
+      ! Broadcast U-MICH namelist variables -->
+      call mpibcast(flag_mc6, 1, mpi_logical, mstrid, mpicom, ierr)
+      call mpibcast(flag_srf_emis, 1, mpi_logical, mstrid, mpicom, ierr)
+      call mpibcast(flag_rtr2, 1, mpi_logical, mstrid, mpicom, ierr)
+    
+      ! Write U-MICH swithces to log file -->
+      write(iulog,*) 'RRTMGP U-MICH LW radiation scheme parameters:'
+      write(iulog,10) flag_mc6, flag_srf_emis, flag_rtr2
+  
+  1.c) in subroutine radiation_init(state)
+      ! For U-MICH MC6 ice cloud optics -->
+      use mc6_ice_optics, only: mc6_ice_optics_init
+
+      ! U-MICH added ice LW scattering optics-->
+      if (flag_mc6) then
+      ! Initialize U-MICH MC6 ice cloud optics
+         call mc6_ice_optics_init()
+      end if
+
+  1.d) in subroutine radiation_driver_lw() 
+      !U-MICH add set_cloud_optics_lw_scat -->
+      use cam_optics, only: set_cloud_optics_lw, set_aerosol_optics_lw &
+                           ,set_cloud_optics_lw_scat
+
+      ! Use 2-stream optics for U-MICH LW-scattering radiation -->
+      type(ty_optical_props_2str) :: cloud_optics_lw_scat
+
+      !!surface_emissivity(1:nlwbands,1:ncol) = 1.0_r8
+
+      ! Use spectral observational surface emissivity, U-MICH -->
+      !surface_emissivity(1:nlwbands,1:ncol) = ???  (to be updated)    
+
+      ! U-MICH added optional scattering longwave optics -->.
+      if (flag_mc6) then
+      ! Do U-MICH MC6 scattering longwave cloud optics calculations -->
+         call t_startf('MC6 longwave cloud optics (U-MICH)')
+         call handle_error(cloud_optics_lw_scat%alloc_2str(ncol, nlev_rad, k_dist_lw, name='longwave cloud optics'))
+         call set_cloud_optics_lw_scat(state, pbuf, k_dist_lw, cloud_optics_lw)
+         call t_stopf('MC6 longwave cloud optics (U-MICH)')
+      else ! RRTMGP default LW optics
+         ! Do longwave cloud optics calculations
+         call t_startf('longwave cloud optics')
+         call handle_error(cloud_optics_lw%alloc_1scl(ncol, nlev_rad, k_dist_lw, name='longwave cloud optics'))
+         call set_cloud_optics_lw(state, pbuf, k_dist_lw, cloud_optics_lw)
+         call t_stopf('longwave cloud optics')
+      end if
+
+      NOTE: Since the RRTMGP default longwave radiative transfer (rte_lw) can handle 
+            two-stream transfer, the MC6 scattering optics can be used directly, so 
+	    no change is made to rte_lw.
+            
+
+2. $E3SM_root/components/cam/src/physics/rrtmgp/cam_optics.F90
+  2.a) in module statement:
+      public set_cloud_optics_lw_scat 
+
+  2.b) add subroutine get_cloud_optics_lw_scat(state, pbuf, optics_out)
+
+  2.c) add subroutine set_cloud_optics_lw_scat(state, pbuf, kdist, optics_out)
+
+3. $E3SM_root/components/cam/src/physics/rrtmgp/cloud_rad_props.F90
+  3.a) in module statements: 
+     public :: get_ice_optics_lw_scat         ! MC6 LW ice rad props (U-MICH)
+  3.a) add subroutine get_ice_optics_lw_scat()
+
+4. $E3SM_root/components/cam/bld/namelist_files/namelist_definition.xml 
+  4.a) add the following namelist: 
+   <entry id="flag_mc6" type="logical"  category="radiation"
+          group="radiation_nl" valid_values="" >
+   Indicates whether to consider cloud scattering in longwave radiative calculations (U-     MICH)
+   Default: FALSE
+   </entry>
+  
+   <entry id="flag_srf_emis" type="logical"  category="radiation"
+          group="radiation_nl" valid_values="" >
+   Indicates whether to consider observational surface emissivity (U-MICH)
+   Default: FALSE
+   </entry>
+  
+   <entry id="flag_rtr2" type="logical"  category="radiation"
+          group="radiation_nl" valid_values="" >
+   Indicates whether to use a hybrid 2-4 stream radiative transfer in longwave radiative      calculations (U-MICH)
+   Default: FALSE
+   </entry>
+
+Files added:
+1. $E3SM_root/components/cam/src/physics/rrtmgp/mc6_ice_optics.F90

@@ -25,6 +25,7 @@ public :: &
    cloud_rad_props_init,          &
    get_ice_optics_sw,             & ! return Mitchell SW ice radiative properties
    get_ice_optics_lw,             & ! Mitchell LW ice rad props
+   get_ice_optics_lw_scat,        & ! MC6 LW ice rad props (U-MICH)
    get_liquid_optics_sw,          & ! return Conley SW rad props
    get_liquid_optics_lw,          & ! return Conley LW rad props
    get_snow_optics_sw,            &
@@ -346,19 +347,20 @@ subroutine get_ice_optics_lw_scat(state, pbuf, tau, tau_w, tau_w_g, tau_w_f)
    real(r8) :: extcoice(nlwbands)            ! ice mass-extinction coefficients of TAMU scheme (m2/g)
    real(r8) :: ssacoice(nlwbands)            ! ice single scattering albedo of TAMU scheme (unitless)
    real(r8) :: asycoice(nlwbands)            ! ice asymmetric factor of TAMU scheme (unitless)
-   real(r8) :: ext_tamu(nlwbands,pcols,pver) ! ice cloud extinction optical thickness (unitless)
-   real(r8) :: abs_tamu(nlwbands,pcols,pver) ! ice cloud absorption optical thickness (unitless)
-   real(r8) :: ssa_tamu(nlwbands,pcols,pver) ! ice cloud single scattering albedo (unitless)
-   real(r8) :: xmomc_tamu(0:1,nlwbands,pcols,pver) ! ice cloud asymmetric factor (unitless), use (0:16) edison will have segmentation fault
-   real(r8) :: iciwp(pcols,pver)             ! work array of in-cloud ice water path (kg/m2)
-   real(r8) :: taucloud, ssacloud, asycloud, xmomcloud(0:1), fpeak
+   !real(r8) :: ext_tamu(nlwbands,pcols,pver) ! ice cloud extinction optical thickness (unitless)
+   !real(r8) :: abs_tamu(nlwbands,pcols,pver) ! ice cloud absorption optical thickness (unitless)
+   !real(r8) :: ssa_tamu(nlwbands,pcols,pver) ! ice cloud single scattering albedo (unitless)
+   !real(r8) :: xmomc_tamu(0:1,nlwbands,pcols,pver) ! ice cloud asymmetric factor (unitless), use (0:16) edison will have segmentation fault
+   !real(r8) :: iciwp(pcols,pver)             ! work array of in-cloud ice water path (kg/m2)
+   !real(r8) :: xmomcloud(0:1)
+   real(r8) :: taucloud, ssacloud, asycloud, fpeak
    real(r8) :: gicewp(pcols,pver)            ! work array of grid-box ice water path (kg/m2)
    real(r8) :: cicewp(pcols,pver)            ! work array of in-cloud ice water path (kg/m2)    
    integer  :: icb(nlwbands,0:2)
    data icb /1,1,1,1,1,1,1,1,1, 1, 1, 1, 1, 1, 1, 1, &
              1,2,3,3,3,4,4,4,5, 5, 5, 5, 5, 5, 5, 5, &
              1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16/
-   integer :: rei_idx, dei_idx, iciwp_idx, err, itim 
+   !integer :: rei_idx, dei_idx, iciwp_idx, err, itim 
    integer,parameter :: iceflag=3
        !  iceflag= 1 : MC6 ice cloud optical properties (MC6 ice crystal shape and 
        !                  0.1 variance gamma PSD, absorption and scattering)
@@ -378,10 +380,10 @@ subroutine get_ice_optics_lw_scat(state, pbuf, tau, tau_w, tau_w_g, tau_w_f)
    tau_w_g(:,:,:) = 0._r8
    tau_w_f(:,:,:) = 0._r8
 
-   ext_tamu(:,:,:)   = 0._r8
-   abs_tamu(:,:,:)   = 0._r8
-   ssa_tamu(:,:,:)   = 0._r8
-   xmomc_tamu(:,:,:) = 0._r8
+   !ext_tamu(:,:,:)   = 0._r8
+   !abs_tamu(:,:,:)   = 0._r8
+   !ssa_tamu(:,:,:)   = 0._r8
+   !xmomc_tamu(:,:,:) = 0._r8
 
    ncol = state%ncol
    lchnk = state%lchnk
@@ -407,13 +409,13 @@ subroutine get_ice_optics_lw_scat(state, pbuf, tau, tau_w, tau_w_g, tau_w_f)
         asycoice(:) = 0._r8
 
         !*** if there is no ice cloud ***
-        if( iciwp(i,k) < 1.e-80_r8 .or. diaice .eq. 0._r8) then
-          ext_tamu (:,i,k) = 0._r8
-          abs_tamu (:,i,k) = 0._r8
-          ssa_tamu (:,i,k) = 0._r8
-          xmomc_tamu (:,:,i,k) = 0._r8
+        if( iciwpth(i,k) < 1.e-80_r8 .or. diaice .eq. 0._r8) then
+          !ext_tamu (:,i,k) = 0._r8
+          !abs_tamu (:,i,k) = 0._r8
+          !ssa_tamu (:,i,k) = 0._r8
+          !xmomc_tamu (:,:,i,k) = 0._r8
           iceind = 0
-
+        else 
         !*** if there is an ice cloud layer ***    
         !-- set upper bound according to ice optical option -->
         !   iceflag=1. MC6 scattering + 0.1 variance Gamma PSD
@@ -563,24 +565,30 @@ subroutine get_ice_optics_lw_scat(state, pbuf, tau, tau_w, tau_w_g, tau_w_f)
              iceind = 2
 
              do ib=1,nlwbands
-                taucloud = iciwp(i,k) * 1000._r8 * extcoice(icb(ib,iceind))  ! change iwp from kg/m2 to g/m2 then compute ice cloud optical thickness
+                taucloud = iciwpth(i,k) * 1000._r8 * extcoice(icb(ib,iceind))  ! change iwp from kg/m2 to g/m2 then compute ice cloud optical thickness
                 ssacloud = ssacoice(icb(ib,iceind))
                 ! delta-scaling (Liou, 2002, 313p)
                 asycloud = asycoice(icb(ib,iceind))
                 fpeak = asycloud * asycloud
 
-                abs_tamu  (ib,i,k)    = taucloud * (1._r8-ssacloud)  ! absorption optical depth
+                !abs_tamu  (ib,i,k)    = taucloud * (1._r8-ssacloud)  ! absorption optical depth
 
                 taucloud = (1._r8-ssacloud*fpeak) * taucloud   ! delta-scaling technique, ref: Joseph, Wiscombe and Weinman (1976, JAS)
                 ssacloud = (1._r8-fpeak)*ssacloud / &
                                    (1._r8-ssacloud*fpeak)
                 asycloud = (asycloud-fpeak) / (1.0_r8-fpeak)
-                xmomcloud(0) = 1._r8
-                xmomcloud(1) = asycloud
+                !xmomcloud(0) = 1._r8
+                !xmomcloud(1) = asycloud
 
-                ext_tamu  (ib,i,k)    = taucloud       ! cloud extinction optical depth, i.e. including absorption and scattering
-                ssa_tamu  (ib,i,k)    = ssacloud       ! single scattering albedo
-                xmomc_tamu(0:,ib,i,k) = xmomcloud(0:)  ! asymmetric factor
+                !ext_tamu  (ib,i,k)    = taucloud       ! cloud extinction optical depth, i.e. including absorption and scattering
+                !ssa_tamu  (ib,i,k)    = ssacloud       ! single scattering albedo
+                !xmomc_tamu(0:,ib,i,k) = xmomcloud(0:)  ! asymmetric factor
+
+                tau(ib,i,k) = taucloud
+                tau_w(ib,i,k) = taucloud*ssacloud
+                tau_w_g(ib,i,k) = taucloud*ssacloud*asycloud
+                tau_w_f(ib,i,k) = taucloud*ssacloud*fpeak
+
              enddo    ! end do of lwbands for cloud radiative coefficients
 
 
@@ -595,12 +603,12 @@ subroutine get_ice_optics_lw_scat(state, pbuf, tau, tau_w, tau_w_g, tau_w_f)
 !---------
 ! return
 !---------
-   ext_od  (:,:,:) = ext_tamu  (:,:,:)
-   abs_od  (:,:,:) = abs_tamu  (:,:,:) ! return abs_tamu to return variable, abs_od
-   ssa_od  (:,:,:) = ssa_tamu  (:,:,:)
-   xmomc_od(:,:,:,:) = xmomc_tamu(:,:,:,:)
+   !ext_od  (:,:,:) = ext_tamu  (:,:,:)
+   !abs_od  (:,:,:) = abs_tamu  (:,:,:) ! return abs_tamu to return variable, abs_od
+   !ssa_od  (:,:,:) = ssa_tamu  (:,:,:)
+   !xmomc_od(:,:,:,:) = xmomc_tamu(:,:,:,:)
 
-   return()
+   return
 end subroutine get_ice_optics_lw_scat
 
 !==============================================================================
