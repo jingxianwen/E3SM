@@ -104,9 +104,10 @@ module radiation
    real(r8) :: fixed_total_solar_irradiance = -1
 
    ! U-MICH LW radiation switches -->
-   logical :: flag_mc6=.false.
-   logical :: flag_srf_emis=.false.
-   logical :: flag_rtr2=.false.
+   logical :: flag_mc6=.false.  ! MC6 ice optics.
+   logical :: flag_emis=.false. ! Observational spectral surface emissivity.
+   logical :: flag_rtr2=.false. ! Hybrid 2-4 stream radiation for LW.
+   logical :: flag_scat=.true.  ! Ice cloud scattering. This is used only when flag_mc6=.true.
 
    ! Model data that is not controlled by namelist fields specifically follows
    ! below.
@@ -222,9 +223,7 @@ contains
                               iradsw, iradlw, irad_always,     &
                               use_rad_dt_cosz, spectralflux,   &
                               do_aerosol_rad, fixed_total_solar_irradiance, &
-                              flag_mc6, flag_srf_emis, flag_rtr2
-      ! Variables added to radiation namelist by U-MICH -->
-      !namelist /radiation_nl/ flag_mc6, flag_srf_emis, flag_rtr2 
+                              flag_mc6, flag_emis, flag_rtr2, flag_scat  !added flags by U-MICH
 
       ! Read the namelist, only if called from master process
       ! TODO: better documentation and cleaner logic here?
@@ -255,8 +254,9 @@ contains
       call mpibcast(fixed_total_solar_irradiance, 1, mpi_real8, mstrid, mpicom, ierr)
       ! Broadcast U-MICH namelist variables -->
       call mpibcast(flag_mc6, 1, mpi_logical, mstrid, mpicom, ierr) 
-      call mpibcast(flag_srf_emis, 1, mpi_logical, mstrid, mpicom, ierr) 
+      call mpibcast(flag_emis, 1, mpi_logical, mstrid, mpicom, ierr) 
       call mpibcast(flag_rtr2, 1, mpi_logical, mstrid, mpicom, ierr) 
+      call mpibcast(flag_scat, 1, mpi_logical, mstrid, mpicom, ierr) 
 #endif
 
       ! Set module data
@@ -282,7 +282,8 @@ contains
                          do_aerosol_rad, fixed_total_solar_irradiance
          ! Write U-MICH swithces to log file -->
          write(iulog,*) 'RRTMGP U-MICH LW radiation scheme parameters:'
-         write(iulog,10) flag_mc6, flag_srf_emis, flag_rtr2 
+         write(iulog,*) 'flag_mc6=',flag_mc6,', flag_emis=', flag_emis,&
+                      ', flag_rtr2=',flag_rtr2,', flag_scat=', flag_scat 
       end if
    10 format('  LW coefficents file: ',                                a/, &
              '  SW coefficents file: ',                                a/, &
@@ -1124,6 +1125,9 @@ contains
       use cam_optics, only: cam_optics_type
       use physconst, only: cpair, stebol
 
+      ! Added by U-MICH team, for spectral surface emissivity, Mar 10, 2020 -->
+      use time_manager,    only: is_first_step 
+
       ! ---------------------------------------------------------------------------
       ! Arguments
       ! ---------------------------------------------------------------------------
@@ -1189,11 +1193,56 @@ contains
       ! Radiative fluxes
       type(ty_fluxes_byband) :: fluxes_allsky, fluxes_clrsky
 
+ ! Added by U-MICH team, Feb 27,2020 -->
+      integer :: i, j 
+      real(r8) :: surface_emis(nlwbands,pcols)  ! surface band-by-band emissivity
+      !real(r8) :: lwdn_spec(nlwbands, pcols)    ! spectral download LW flux
+      real(r8) :: Ts_LW(pcols)     ! surface temperature derived from longwave upward flux using realistic emissivity values
+      !real(r8) :: Ts_black(pcols)  ! surface temperature derived from longwave upward flux using blackbody assumption     
 
       !----------------------------------------------------------------------
 
       ! Number of physics columns in this "chunk"
       ncol = state%ncol
+
+      ! U-MICH team added, Feb 27,2020 -->
+      surface_emis = 1._r8
+      Ts_LW        = 0._r8 
+!     lwdn_spec    = 0._r8
+      !!!!!! This part sets surface emissivity !!!!!!
+      do i = 1,ncol
+          if (flag_emis) then
+               cam_out%do_emis(i) = 1
+          else
+               cam_out%do_emis(i) = 0
+          endif
+      enddo
+
+      ! This change is to replace blackbody-derived Tskin with real-emissivity-derived Tskin
+      do i = 1,ncol
+        ! use realistic emissivity
+        if (flag_emis) then
+          Ts_LW(i) = cam_in%ts_atm(i)
+          cam_out%emis_spec(i,:) = cam_in%srf_emis_spec(i,:)
+        ! use blackbody surface
+        else
+          Ts_LW(i) = sqrt(sqrt(cam_in%lwup(i)/stebol))
+          cam_out%emis_spec(i,:) = 1._r8
+        endif
+        ! first step uses blackbody surface
+        if (is_first_step ()) then
+          Ts_LW(i) = sqrt(sqrt(cam_in%lwup(i)/stebol))
+          cam_out%emis_spec(i,:) = 1._r8
+        end if
+      end do
+
+      ! import surface spectral emissivity
+      do i=1,ncol
+        do j=1,nlwbands
+          surface_emis(j,i) = cam_out%emis_spec(i,j)
+        end do
+      end do
+      !<-- End add by U-MICH team, Feb 27, 2020
 
       ! Set pointers to heating rates stored on physics buffer. These will be
       ! modified in this routine.
@@ -1213,8 +1262,11 @@ contains
          call initialize_rrtmgp_fluxes(ncol, nlev_rad+1, nswbands, fluxes_clrsky, do_direct=.true.)
 
          ! Call the shortwave radiation driver
-         call radiation_driver_sw(state, pbuf, cam_in, is_cmip6_volc, &
-                                  fluxes_allsky, fluxes_clrsky, qrs, qrsc)
+         !call radiation_driver_sw(state, pbuf, cam_in, is_cmip6_volc, &     !commented, U-MICH.
+         !                         fluxes_allsky, fluxes_clrsky, qrs, qrsc)  
+         ! Added by U-MICH, Mar 9, 2020 -->
+         call radiation_driver_sw(state, pbuf, cam_in, is_cmip6_volc, &    
+                                  fluxes_allsky, fluxes_clrsky, qrs, qrsc, Ts_LW)
         
          ! Set net fluxes used by other components (land?) 
          call set_net_fluxes_sw(fluxes_allsky, fsds, fsns, fsnt)
@@ -1246,8 +1298,18 @@ contains
          call initialize_rrtmgp_fluxes(ncol, nlev_rad+1, nlwbands, fluxes_clrsky)
 
          ! Call the longwave radiation driver to calculate fluxes and heating rates
-         call radiation_driver_lw(state, pbuf, cam_in, is_cmip6_volc, &
-                                  fluxes_allsky, fluxes_clrsky, qrl, qrlc)
+         !call radiation_driver_lw(state, pbuf, cam_in, is_cmip6_volc, &   ! commented, U-MICH
+         !                         fluxes_allsky, fluxes_clrsky, qrl, qrlc)
+         ! Added by U-MICH, Mar 9, 2020 -->
+         call radiation_driver_lw(state, pbuf, cam_in, is_cmip6_volc, & 
+                   fluxes_allsky, fluxes_clrsky, qrl, qrlc, surface_emis, Ts_LW)
+
+         ! U-MICH team added, Feb 20, 2020 to output surface downward spectral flux -->
+          do i=1,ncol
+             do j=1,nlwbands
+               cam_out%flwds_spec(i,j) = fluxes_allsky%bnd_flux_dn(i, nlev_rad+1, j)
+             enddo
+          enddo           
         
          ! Set net fluxes used in other components
          call set_net_fluxes_lw(fluxes_allsky, flns, flnt)
@@ -1286,8 +1348,12 @@ contains
 
    !----------------------------------------------------------------------------
 
+   !subroutine radiation_driver_sw(state, pbuf, cam_in, is_cmip6_volc, &  !commented, U-MICH.
+   !                               fluxes_allsky, fluxes_clrsky, qrs, qrsc)
+
+   ! Added input Ts_LW by U-MICH -->
    subroutine radiation_driver_sw(state, pbuf, cam_in, is_cmip6_volc, &
-                                  fluxes_allsky, fluxes_clrsky, qrs, qrsc)
+                                  fluxes_allsky, fluxes_clrsky, qrs, qrsc, Ts_LW)
      
       use rad_constituents, only: N_DIAG, rad_cnst_get_call_list
       use perf_mod, only: t_startf, t_stopf
@@ -1367,6 +1433,9 @@ contains
       ! Everybody needs a name
       character(*), parameter :: subroutine_name = 'radiation_driver_sw'
 
+      ! Added by U-MICH team, Feb 28, 2020 -->
+      !  surface temperature derived from longwave upward flux using realistic emissivity values
+      real(r8) :: Ts_LW(pcols)
 
       ! Number of physics columns in this "chunk"; used in multiple places
       ! throughout this subroutine, so set once for convenience
@@ -1422,6 +1491,9 @@ contains
                          pmid(1:nday,1:nlev_rad), &
                          pint(1:nday,1:nlev_rad+1), &
                          col_indices=day_indices(1:nday))
+
+      ! Added by U-MICH team to use new surface skin temperature, Feb 28, 2020 -->
+      tint(1:ncol,nlev_rad+1) = Ts_LW
 
       ! Get albedo. This uses CAM routines internally and just provides a
       ! wrapper to improve readability of the code here.
@@ -1563,8 +1635,12 @@ contains
 
    !----------------------------------------------------------------------------
 
+   !subroutine radiation_driver_lw(state, pbuf, cam_in, is_cmip6_volc, &  !Commented, U-MICH
+   !                               fluxes_allsky, fluxes_clrsky, qrl, qrlc)
+
+   !Added input surface_emis and Ts_Lw by U-MICH team, Mar 9, 2020 -->
    subroutine radiation_driver_lw(state, pbuf, cam_in, is_cmip6_volc, &
-                                  fluxes_allsky, fluxes_clrsky, qrl, qrlc)
+                        fluxes_allsky, fluxes_clrsky, qrl, qrlc, surface_emis, Ts_Lw)
     
       use rad_constituents, only: N_DIAG, rad_cnst_get_call_list
       use perf_mod, only: t_startf, t_stopf
@@ -1575,15 +1651,17 @@ contains
       use mo_rrtmgp_clr_all_sky, only: rte_lw
       use mo_fluxes_byband, only: ty_fluxes_byband
       !use mo_optical_props, only: ty_optical_props_1scl !commented, U-MICH
-      !added, U-MICH -->
+      ! Added ty_optical_props_2str by U-MICH -->
       use mo_optical_props, only: ty_optical_props_1scl,ty_optical_props_2str
 
       use mo_gas_concentrations, only: ty_gas_concs
       use radiation_state, only: set_rad_state
       use radiation_utils, only: calculate_heating_rate, clip_values
-      !U-MICH add set_cloud_optics_lw_scat -->
+      !use cam_optics, only: set_cloud_optics_lw, set_aerosol_optics_lw !Commented, U-MICH
+      ! Added set_cloud_optics_lw_scat by U-MICH -->
       use cam_optics, only: set_cloud_optics_lw, set_aerosol_optics_lw &
                            ,set_cloud_optics_lw_scat 
+
       use cam_control_mod, only: aqua_planet
 
       ! Inputs
@@ -1617,8 +1695,11 @@ contains
       type(ty_optical_props_1scl) :: aerosol_optics_lw
       type(ty_optical_props_1scl) :: cloud_optics_lw
 
-      ! Use 2-stream optics for U-MICH LW-scattering radiation -->
+      ! Added by U-MICH team to Use scattering ice optics and spectral surface emissivity-->
       type(ty_optical_props_2str) :: cloud_optics_lw_scat
+      real(r8) :: surface_emis(nlwbands,pcols)  ! surface band-by-band emissivity
+      real(r8) :: Ts_LW(pcols)   ! surface temperature derived from longwave upward 
+                                 ! flux using realistic emissivity values
 
       integer :: ncol, icall
 
@@ -1639,10 +1720,11 @@ contains
       ! a lot of difference either way, but if a more intelligent value
       ! exists or is assumed in the model we should use it here as well.
       ! TODO: set this more intelligently?
-      surface_emissivity(1:nlwbands,1:ncol) = 1.0_r8
+      !surface_emissivity(1:nlwbands,1:ncol) = 1.0_r8  !commented, U-MICH
 
-      ! Use spectral observational surface emissivity, U-MICH -->
-      !surface_emissivity(1:nlwbands,1:ncol) = ???  (to be updated)
+      ! Added by U-MICH team o use real surface emissivity and new surface skin temperature
+      surface_emissivity(1:nlwbands,1:ncol) = surface_emis(1:nlwbands,1:ncol) 
+      tint(1:ncol,nlev_rad+1) = Ts_LW(1:ncol)
 
       ! Make sure temperatures are within range for aqua planets
       if (aqua_planet) then
@@ -1657,7 +1739,7 @@ contains
          call handle_error(cloud_optics_lw_scat%alloc_2str(ncol, nlev_rad, k_dist_lw, name='longwave cloud optics'))
          call set_cloud_optics_lw_scat(state, pbuf, k_dist_lw, cloud_optics_lw_scat)
          call t_stopf('MC6 longwave cloud optics (U-MICH)')
-     else  ! RRTMGP default LW optics
+      else  ! RRTMGP default LW optics
          ! Do longwave cloud optics calculations
          call t_startf('longwave cloud optics')
          call handle_error(cloud_optics_lw%alloc_1scl(ncol, nlev_rad, k_dist_lw, name='longwave cloud optics'))
@@ -1697,9 +1779,10 @@ contains
             end if
 
             ! Do longwave radiative transfer calculations
-            call t_startf('rad_calculations_lw')
             ! U-MICH added optional scattering longwave radiative transfer -->
             if (flag_mc6) then
+            ! U-MICH added optional scattering longwave radiative transfer -->
+               call t_startf('MC6_rad_calculations_lw')
                call handle_error(rte_lw( &
                   k_dist_lw, gas_concentrations, &
                   pmid(1:ncol,1:nlev_rad), tmid(1:ncol,1:nlev_rad), &
@@ -1711,7 +1794,9 @@ contains
                   t_lev=tint(1:ncol,1:nlev_rad+1), &
                   n_gauss_angles=1 & ! Set to 3 for consistency with RRTMG
                ))
+               call t_stopf('MC6_rad_calculations_lw')
             else ! RRTMGP default longwave radiative transfer
+               call t_startf('rad_calculations_lw')
                call handle_error(rte_lw( &
                   k_dist_lw, gas_concentrations, &
                   pmid(1:ncol,1:nlev_rad), tmid(1:ncol,1:nlev_rad), &
@@ -1723,8 +1808,8 @@ contains
                   t_lev=tint(1:ncol,1:nlev_rad+1), &
                   n_gauss_angles=1 & ! Set to 3 for consistency with RRTMG
                ))
+               call t_stopf('rad_calculations_lw')
             end if
-            call t_stopf('rad_calculations_lw')
 
             ! Calculate heating rates
             call calculate_heating_rate(fluxes_allsky, pint(1:ncol,1:nlev_rad+1), &

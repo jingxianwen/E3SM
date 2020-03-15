@@ -331,6 +331,7 @@ subroutine get_ice_optics_lw_scat(state, pbuf, tau, tau_w, tau_w_g, tau_w_f)
    use mc6_ice_optics, only: absice4, extice4, ssaice4, asyice4, &
                        absice5, extice5, ssaice5, asyice5, &
                        absice6, extice6, ssaice6, asyice6   
+  !use radiation, only: flag_scat
 
    type(physics_state), intent(in)     :: state
    type(physics_buffer_desc), pointer  :: pbuf(:)
@@ -573,21 +574,27 @@ subroutine get_ice_optics_lw_scat(state, pbuf, tau, tau_w, tau_w_g, tau_w_f)
 
                 !abs_tamu  (ib,i,k)    = taucloud * (1._r8-ssacloud)  ! absorption optical depth
 
-                taucloud = (1._r8-ssacloud*fpeak) * taucloud   ! delta-scaling technique, ref: Joseph, Wiscombe and Weinman (1976, JAS)
-                ssacloud = (1._r8-fpeak)*ssacloud / &
+                !if (flag_scat) then
+                   taucloud = (1._r8-ssacloud*fpeak) * taucloud   ! delta-scaling technique, ref: Joseph, Wiscombe and Weinman (1976, JAS)
+                   ssacloud = (1._r8-fpeak)*ssacloud / &
                                    (1._r8-ssacloud*fpeak)
-                asycloud = (asycloud-fpeak) / (1.0_r8-fpeak)
-                !xmomcloud(0) = 1._r8
-                !xmomcloud(1) = asycloud
+                   asycloud = (asycloud-fpeak) / (1.0_r8-fpeak)
+                   !xmomcloud(0) = 1._r8
+                   !xmomcloud(1) = asycloud
 
-                !ext_tamu  (ib,i,k)    = taucloud       ! cloud extinction optical depth, i.e. including absorption and scattering
-                !ssa_tamu  (ib,i,k)    = ssacloud       ! single scattering albedo
-                !xmomc_tamu(0:,ib,i,k) = xmomcloud(0:)  ! asymmetric factor
-
-                tau(ib,i,k) = taucloud
-                tau_w(ib,i,k) = taucloud*ssacloud
-                tau_w_g(ib,i,k) = taucloud*ssacloud*asycloud
-                tau_w_f(ib,i,k) = taucloud*ssacloud*fpeak
+                   !ext_tamu  (ib,i,k)    = taucloud       ! cloud extinction optical depth, i.e. including absorption and scattering
+                   !ssa_tamu  (ib,i,k)    = ssacloud       ! single scattering albedo
+                   !xmomc_tamu(0:,ib,i,k) = xmomcloud(0:)  ! asymmetric factor
+                   tau(ib,i,k) = taucloud
+                   tau_w(ib,i,k) = taucloud*ssacloud
+                   tau_w_g(ib,i,k) = taucloud*ssacloud*asycloud
+                   tau_w_f(ib,i,k) = taucloud*ssacloud*fpeak
+                !else
+                !   tau(ib,i,k) = taucloud*(1._r8-ssacloud) !absorption optical depth
+                !   tau_w(ib,i,k) = 0.0_r8 !taucloud*ssacloud
+                !   tau_w_g(ib,i,k) = 0.0_r8 !taucloud*ssacloud*asycloud
+                !   tau_w_f(ib,i,k) = 0.0_r8 !taucloud*ssacloud*fpeak
+                !end if
 
              enddo    ! end do of lwbands for cloud radiative coefficients
 
