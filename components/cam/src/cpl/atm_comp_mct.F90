@@ -449,6 +449,7 @@ CONTAINS
     use parrrtm,        only: nbndlw  ! Added by UM team on Dec.15, 2019
     use shr_const_mod,  only: shr_const_stebol ! Added by UM team on Dec.15, 2019
     use radconstants,   only: wavenumber1_longwave  ! Added by UM team on Feb.29, 2020
+    use radiation,      only: flag_emis ! Added by UM team on Mar 16, 2020
     ! 
     ! Arguments
     !
@@ -564,8 +565,10 @@ CONTAINS
 
     !*** using realstic emissivity ***       
     if (cam_out(begchunk)%do_emis(1) .eq. 1) then
+       write(iulog,*) 'xianwen, flag_emis & do_emis=',flag_emis, cam_out(begchunk)%do_emis(1)
+    !if (flag_emis) then
     !if (.false.) then
-         call read_surface_emis(sizebuf,lats2,lons2,mon,emis0(1:sizebuf,:), water_emis, ice_emis, desert_emis, grass_emis)
+       call read_surface_emis(sizebuf,lats2,lons2,mon,emis0(1:sizebuf,:), water_emis, ice_emis, desert_emis, grass_emis)
 
          sizebuf=0
          do c=begchunk, endchunk
@@ -599,7 +602,8 @@ CONTAINS
  
              call  get_Ts_from_LW_emis(v1_rrtmg_lw, real(cam_in(c)%srf_emis_spec(i,:)), cam_in(c)%lwup(i),cam_out(c)%flwds_spec(i,:), 16 + 1, 3, Ts_LW)
              cam_in(c)%ts_atm(i) =Ts_LW
-      !       write(iulog,*) 'chen2',sum(cam_out(c)%flwds_spec(i,:)), real(cam_in(c)%srf_emis_spec(i,1)),Ts_LW-sqrt(sqrt((cam_in(c)%lwup(i)/shr_const_stebol)))
+             write(iulog,*) 'chen2',sum(cam_out(c)%flwds_spec(i,:)), real(cam_in(c)%srf_emis_spec(i,1)),Ts_LW-sqrt(sqrt((cam_in(c)%lwup(i)/shr_const_stebol)))
+             write(iulog,*) 'xianwen2,tlai=',cam_in(c)%tlai(i)
              cam_in(c)%ts(i) =  cam_in(c)%ts_atm(i)
            enddo ! end do of i, ncols
          enddo ! end do of c, chunk

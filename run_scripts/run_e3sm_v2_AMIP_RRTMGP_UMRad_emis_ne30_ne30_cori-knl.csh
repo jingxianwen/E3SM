@@ -23,11 +23,11 @@
 ###===================================================================
 
 ### BASIC INFO ABOUT RUN
-set job_name       = E3SM_v2_alpha_AMIP_RRTMGP_UMRad_emis_debug
+set job_name       = E3SM_v2_alpha_AMIP_RRTMGP_UMRad_restart_debug
 set compset        = FC5AV1C-04P2
 set resolution     = ne30_ne30
 set machine        = cori-knl
-set walltime       = 00:30
+set walltime       = 03:00:00
 setenv project       m2136
 
 ### SOURCE CODE OPTIONS
@@ -81,7 +81,7 @@ set num_resubmits    = 0
 set do_short_term_archiving      = false
 
 ### SIMULATION OPTIONS
-set start_date                   = 0001-01-01
+set start_date                   = 2001-01-01
 
 ### COUPLER HISTORY FILES
 set do_cpl_hist    = true
@@ -926,7 +926,7 @@ $xmlchange_exe --id DEBUG --val `uppercase $debug_compile`
 # NOTE: $atm_output_freq and $records_per_atm_output_file are so commonly used, that they are set in the options at the top of this script.
 
 cat <<EOF >> user_nl_cam
- nhtfrq =   -24
+ nhtfrq = -24
  mfilt  = 1
  avgflag_pertape = 'A'
  empty_htapes = .false.

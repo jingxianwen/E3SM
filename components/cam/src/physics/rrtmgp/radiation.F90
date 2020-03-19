@@ -104,10 +104,10 @@ module radiation
    real(r8) :: fixed_total_solar_irradiance = -1
 
    ! U-MICH LW radiation switches -->
-   logical :: flag_mc6=.false.  ! MC6 ice optics.
-   logical :: flag_emis=.false. ! Observational spectral surface emissivity.
-   logical :: flag_rtr2=.false. ! Hybrid 2-4 stream radiation for LW.
-   logical :: flag_scat=.true.  ! Ice cloud scattering. This is used only when flag_mc6=.true.
+   logical, public :: flag_mc6=.false.  ! MC6 ice optics.
+   logical, public :: flag_emis=.false. ! Observational spectral surface emissivity.
+   logical, public :: flag_rtr2=.false. ! Hybrid 2-4 stream radiation for LW.
+   logical, public :: flag_scat=.true.  ! Ice cloud scattering. This is used only when flag_mc6=.true.
 
    ! Model data that is not controlled by namelist fields specifically follows
    ! below.
@@ -1127,6 +1127,7 @@ contains
 
       ! Added by U-MICH team, for spectral surface emissivity, Mar 10, 2020 -->
       use time_manager,    only: is_first_step 
+      use cam_logfile,     only: iulog
 
       ! ---------------------------------------------------------------------------
       ! Arguments
@@ -1242,6 +1243,8 @@ contains
           surface_emis(j,i) = cam_out%emis_spec(i,j)
         end do
       end do
+      write(iulog,*)"xianwen: ts_lw(1)=",Ts_LW(1), "flag_emis=",flag_emis, "is_first_step=",is_first_step()
+      write(iulog,*)"xianwen: surface_emis(:,1)=",surface_emis(j,1)
       !<-- End add by U-MICH team, Feb 27, 2020
 
       ! Set pointers to heating rates stored on physics buffer. These will be
@@ -1493,7 +1496,7 @@ contains
                          col_indices=day_indices(1:nday))
 
       ! Added by U-MICH team to use new surface skin temperature, Feb 28, 2020 -->
-      tint(1:ncol,nlev_rad+1) = Ts_LW
+      tint(1:ncol,nlev_rad+1) = Ts_LW(1:ncol)
 
       ! Get albedo. This uses CAM routines internally and just provides a
       ! wrapper to improve readability of the code here.
