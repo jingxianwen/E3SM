@@ -23,11 +23,11 @@
 ###===================================================================
 
 ### BASIC INFO ABOUT RUN
-set job_name       = E3SM_v2_alpha_AMIP_RRTMGP_UMRad_ln_emis_debug
+set job_name       = E3SM_v2_alpha_AMIP_RRTMGP_UMRad
 set compset        = FC5AV1C-04P2
 set resolution     = ne30_ne30
 set machine        = cori-knl
-set walltime       = 00:30:00
+set walltime       = 12:00:00
 setenv project       m2136
 
 ### SOURCE CODE OPTIONS
@@ -45,7 +45,7 @@ set old_executable = false      # build executable is set to 'false', reuse
 
 ### SUBMIT OPTIONS
 set submit_run       = true     # submit experiment after successful build
-set debug_queue      = true     # submit to debug queue?
+set debug_queue      = false     # submit to debug queue?
 
 ### PROCESSOR CONFIGURATION
 set processor_config = L        # PE count: S (39 nodes), L (285 nodes)
@@ -66,22 +66,22 @@ set short_term_archive_root_dir = ${e3sm_simulations_dir}/${case_name}/archive
 ### LENGTH OF SIMULATION, RESTARTS, AND ARCHIVING
 
 ## 5-day test simulation
-set stop_units       = ndays
-set stop_num         = 2
-set restart_units    = $stop_units
-set restart_num      = 1
-
-## Multi-year simulation
-#set stop_units       = nyears
-#set stop_num         = 10
-#set restart_units    = nyears
+#set stop_units       = ndays
+#set stop_num         = 2
+#set restart_units    = $stop_units
 #set restart_num      = 1
 
-set num_resubmits    = 0
+## Multi-year simulation
+set stop_units       = nyears
+set stop_num         = 1
+set restart_units    = nyears
+set restart_num      = 1
+
+set num_resubmits    = 2
 set do_short_term_archiving      = false
 
 ### SIMULATION OPTIONS
-set start_date                   = 2001-01-01
+set start_date                   = 2000-01-01
 
 ### COUPLER HISTORY FILES
 set do_cpl_hist    = true
@@ -926,7 +926,7 @@ $xmlchange_exe --id DEBUG --val `uppercase $debug_compile`
 # NOTE: $atm_output_freq and $records_per_atm_output_file are so commonly used, that they are set in the options at the top of this script.
 
 cat <<EOF >> user_nl_cam
- nhtfrq = -24
+ nhtfrq = 0
  mfilt  = 1
  avgflag_pertape = 'A'
  empty_htapes = .false.
