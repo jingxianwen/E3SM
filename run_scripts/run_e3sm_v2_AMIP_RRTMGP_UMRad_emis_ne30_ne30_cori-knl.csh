@@ -23,7 +23,7 @@
 ###===================================================================
 
 ### BASIC INFO ABOUT RUN
-set job_name       = E3SM_v2_alpha_AMIP_RRTMGP_UMRad_restart_addvar2_debug
+set job_name       = E3SM_v2_alpha_AMIP_RRTMGP_UMRad_ln_emis_debug
 set compset        = FC5AV1C-04P2
 set resolution     = ne30_ne30
 set machine        = cori-knl
@@ -968,6 +968,9 @@ if ( `lowercase $old_executable` == false ) then
   e3sm_newline
   e3sm_print '-------- Finished Build --------'
   e3sm_newline
+
+  ln -s /global/cscratch1/sd/xianwen/data/emis/surface_emissivity_1x1_RRTMGP_53deg.nc $case_run_dir/ 
+
 else if ( `lowercase $old_executable` == true ) then
   if ( -x $case_build_dir/$e3sm_exe ) then       #use executable previously generated for this case_name.
     e3sm_print 'Skipping build because $old_executable='$old_executable

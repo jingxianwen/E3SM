@@ -1093,8 +1093,8 @@ CONTAINS
       real :: surface_emis(ncols, nbndlw), minvalue
       real :: water_emis(nbndlw), ice_emis(nbndlw), desert_emis(nbndlw), grass_emis(nbndlw)
 
-      !filename = "surface_emissivity_1x1_RRTMG_53deg.nc"
-      filename = "/global/cscratch1/sd/xianwen/data/emis/surface_emissivity_1x1_RRTMGP_53deg.nc"
+      filename = "surface_emissivity_1x1_RRTMGP_53deg.nc"
+      !filename = "/global/cscratch1/sd/xianwen/data/emis/surface_emissivity_1x1_RRTMGP_53deg.nc"
       status = nf90_open(trim(filename), nf90_nowrite, ncid)
       status = nf90_inq_dimid(ncid, "time", timeID)
       status = nf90_inq_dimid(ncid, "lat", latID)
