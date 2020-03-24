@@ -1207,8 +1207,8 @@ contains
       ncol = state%ncol
 
       ! U-MICH team added, Feb 27,2020 -->
-      surface_emis = 1._r8
-      Ts_LW        = 0._r8 
+      !surface_emis = 1._r8
+      !Ts_LW        = 0._r8 
 !     lwdn_spec    = 0._r8
       !!!!!! This part sets surface emissivity !!!!!!
       do i = 1,ncol
@@ -1243,8 +1243,8 @@ contains
           surface_emis(j,i) = cam_out%emis_spec(i,j)
         end do
       end do
-      write(iulog,*)"xianwen: ts_lw(1)=",Ts_LW(1), "flag_emis=",flag_emis, "is_first_step=",is_first_step()
-      write(iulog,*)"xianwen: surface_emis(:,1)=",surface_emis(j,1)
+      !write(iulog,*)"xianwen: ts_lw(1)=",Ts_LW(1), "flag_emis=",flag_emis, "is_first_step=",is_first_step()
+      !write(iulog,*)"xianwen: surface_emis(:,1)=",surface_emis(:,1)
       !<-- End add by U-MICH team, Feb 27, 2020
 
       ! Set pointers to heating rates stored on physics buffer. These will be

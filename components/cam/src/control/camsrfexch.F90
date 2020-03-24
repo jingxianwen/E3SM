@@ -267,11 +267,12 @@ CONTAINS
       !!!!!!!!! Added by U-MICH team on Dec.15,2019
        cam_in(c)%tlai     (:) = posinf    
        cam_in(c)%ts_atm     (:) = posinf    
-       cam_in(c)%srf_emis_spec(:,:) = 1.0 
+       cam_in(c)%srf_emis_spec(:,:) = 1.0_r8
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   
      end do
+     !write(iulog,*) "xianwen(camsrfexch):srf_emis_spec=",cam_in(1)%srf_emis_spec(1,:)
 
   end subroutine hub2atm_alloc
 

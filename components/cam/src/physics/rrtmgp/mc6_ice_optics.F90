@@ -36,7 +36,7 @@ use shr_kind_mod, only: r8 => shr_kind_r8
 contains 
 
    subroutine mc6_ice_optics_init()
-!>>> UM team Dec.18, 2019 add start >>>
+!>>> U-MICH team Dec.18, 2019 add start >>>
 ! MC6 ice cloud model (0.1 Gamma PSD)
 ! Parameterizations of ice cloud optical properties by using 
 ! MODIS Collection 6 ice cloud shape and 0.1 variance Gamma PSD. 
@@ -893,7 +893,7 @@ contains
                              0.0000000000000e+00_r8,  0.0000000000000e+00_r8,  0.0000000000000e+00_r8,  0.0000000000000e+00_r8/) 
        asyice6(2,:,16) = (/  1.7476549279007e+04_r8, -1.7139525163433e+04_r8,  6.1834727475563e+03_r8, -8.6730112459330e+02_r8, &
                             -1.7400717666123e+01_r8,  1.7222668006228e+01_r8, -1.4733055979538e+00_r8,  8.3799379857791e-01_r8/)
-!<<< UM team Dec.18, 2019 add end <<<
+!<<< U-MICH team Dec.18, 2019 add end <<<
 
   end subroutine mc6_ice_optics_init
 end module mc6_ice_optics

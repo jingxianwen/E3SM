@@ -113,7 +113,7 @@ contains
     character(len=CL)  :: stream_fldFileName_popdens ! poplulation density stream filename
     character(len=CL)  :: stream_fldFileName_ndep    ! nitrogen deposition stream filename
     logical :: use_sitedata, has_zonefile, use_daymet, use_livneh
-    integer :: j  ! Added by UM team on Dec.15, 2019
+    integer :: j  ! Added by U-MICH team on Dec.15, 2019
     data caldaym / 1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 /    
 
     ! Constants to compute vapor pressure
@@ -179,7 +179,7 @@ contains
     thisng = bounds%endg - bounds%begg + 1
     do g = bounds%begg,bounds%endg
        i = 1 + (g - bounds%begg)
-      !!!!!!!!!!!!!! Added by UM team on Dec.15, 2019
+      !!!!!!!!!!!!!! Added by U-MICH team on Dec.15, 2019
         atm2lnd_vars%do_emis(g) = x2l(index_x2l_Do_emis,i)
                do j=1,16
                   atm2lnd_vars%lwdn_spec(g,j)   = x2l(index_x2l_Faxa_lwdn_spec(j),i)
@@ -1334,7 +1334,7 @@ contains
     real(r8)          , intent(out)   :: l2x(:,:)! land to coupler export state on land grid
     !
     ! !LOCAL VARIABLES:
-    integer  :: g,i,j   ! indices ! j is added by UM team on Dec.15, 2019
+    integer  :: g,i,j   ! indices ! j is added by U-MICH team on Dec.15, 2019
     integer  :: ier   ! error status
     integer  :: nstep ! time step index
     integer  :: dtime ! time step   
@@ -1349,7 +1349,7 @@ contains
     do g = bounds%begg,bounds%endg
        i = 1 + (g-bounds%begg)
    
-       !!!!!!!!! Added by UM team on Dec.15, 2019
+       !!!!!!!!! Added by U-MICH team on Dec.15, 2019
        l2x(index_l2x_Sl_tlai,i)     =  lnd2atm_vars%tlai(g)  
        l2x(index_l2x_Sl_ts_atm,i)   =  lnd2atm_vars%ts_atm(g)  
        do j=1,16

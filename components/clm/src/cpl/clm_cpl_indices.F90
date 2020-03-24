@@ -24,7 +24,7 @@ module clm_cpl_indices
 
   ! lnd -> drv (required)
    
-  !!!!!!!!!!!! Added by UM team on Dec.15, 2019
+  !!!!!!!!!!!! Added by U-MICH team on Dec.15, 2019
   integer, public ::index_l2x_Sl_ts_atm            ! temperature to atmosphere
   integer, public ::index_l2x_Sl_srf_emis_spec(16) ! surface emissivity
   integer, public :: index_l2x_Sl_tlai           ! leaf area index
@@ -76,7 +76,7 @@ module clm_cpl_indices
   integer, public :: nflds_l2x = 0
 
   ! drv -> lnd (required)
-  !!!!!!!!!!!!!!!!!!! added by UM team on Dec.15, 2019 
+  !!!!!!!!!!!!!!!!!!! added by U-MICH team on Dec.15, 2019 
   integer, public ::index_x2l_Faxa_lwdn_spec(16) = 0      ! downward lw heat spectral flux
   integer, public ::index_x2l_Faxa_emis_spec(16) = 0      ! surface emissivity
   integer, public ::index_x2l_Do_emis            = 0      ! A switch for turning on surface spectral emissivity
@@ -179,7 +179,7 @@ contains
     ! clm -> drv 
     !-------------------------------------------------------------
 
-   !!!!!!!!!!!!!! Added by UM team on Dec.15, 2019
+   !!!!!!!!!!!!!! Added by U-MICH team on Dec.15, 2019
     index_l2x_Sl_ts_atm          = mct_avect_indexra(l2x,'Sl_ts_atm') 
 
     do num=1,16
@@ -244,7 +244,7 @@ contains
     !-------------------------------------------------------------
     ! drv -> clm
     !-------------------------------------------------------------
-    !!!!!!!!!!!!!!!!!!!!! Added by UM team on Dec.15, 2019
+    !!!!!!!!!!!!!!!!!!!!! Added by U-MICH team on Dec.15, 2019
     index_x2l_Do_emis  = mct_avect_indexra(x2l,'Do_emis')
     do num=1,16
         write(cnum,'(i2.2)') num

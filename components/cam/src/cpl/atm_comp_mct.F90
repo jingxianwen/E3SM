@@ -446,10 +446,10 @@ CONTAINS
     use pmgrid,          only: plev, plevp
     use constituents,    only: pcnst
     use shr_sys_mod,     only: shr_sys_flush
-    use parrrtm,        only: nbndlw  ! Added by UM team on Dec.15, 2019
-    use shr_const_mod,  only: shr_const_stebol ! Added by UM team on Dec.15, 2019
-    use radconstants,   only: wavenumber1_longwave  ! Added by UM team on Feb.29, 2020
-    use radiation,      only: flag_emis ! Added by UM team on Mar 16, 2020
+    use parrrtm,        only: nbndlw  ! Added by U-MICH team on Dec.15, 2019
+    use shr_const_mod,  only: shr_const_stebol ! Added by U-MICH team on Dec.15, 2019
+    use radconstants,   only: wavenumber1_longwave  ! Added by U-MICH team on Feb.29, 2020
+    !use radiation,      only: flag_emis ! Added by U-MICH team on Mar 16, 2020
     ! 
     ! Arguments
     !
@@ -491,7 +491,7 @@ CONTAINS
     character(len=*), parameter :: subname="atm_run_mct"
     !-----------------------------------------------------------------------
 
-    !!!!!!!!!!!!  Added by UM team on Dec.15, 2019
+    !!!!!!!!!!!!  Added by U-MICH team on Dec.15, 2019
     ! This change is to define and initialize new variables    
     integer :: i,j,c,ncols,sizebuf
 
@@ -514,7 +514,7 @@ CONTAINS
     endif
 #endif
 
-     !!!! UM team added on Feb.29, 2020
+     !!!! U-MICH team added on Feb.29, 2020
      v1_rrtmg_lw(1:16) = wavenumber1_longwave
      v1_rrtmg_lw(17) = 3250
 
@@ -543,7 +543,7 @@ CONTAINS
     call atm_import( x2a_a%rattr, cam_in )
     call t_stopf  ('CAM_import')
      
-    !!!!!! Added by UM team on Dec.15, 2019 !!!!!!!!!!!!!!!!
+    !!!!!! Added by U-MICH team on Dec.15, 2019 !!!!!!!!!!!!!!!!
     !!!! This change is to compute surface skin temperature and pass it to cam_in
     call get_curr_date(yr, mon, day, tod)
     pi = 4.*atan(1.)
@@ -563,11 +563,10 @@ CONTAINS
              enddo
      enddo
 
-     write(iulog,*) 'xianwen1, flag_emis & do_emis=',flag_emis, cam_out(begchunk)%do_emis(1)
+     !write(iulog,*) 'xianwen1, flag_emis & do_emis=',flag_emis, cam_out(begchunk)%do_emis(1)
     !*** using realstic emissivity ***       
     if (cam_out(begchunk)%do_emis(1) .eq. 1) then
-       write(iulog,*) 'xianwen2, flag_emis & do_emis=',flag_emis, cam_out(begchunk)%do_emis(1)
-    !if (flag_emis) then
+       !write(iulog,*) 'xianwen2, flag_emis & do_emis=',flag_emis, cam_out(begchunk)%do_emis(1)
     !if (.false.) then
        call read_surface_emis(sizebuf,lats2,lons2,mon,emis0(1:sizebuf,:), water_emis, ice_emis, desert_emis, grass_emis)
 
@@ -1065,7 +1064,7 @@ CONTAINS
   end subroutine atm_write_srfrest_mct
 
   subroutine read_surface_emis(ncols,lats2,lons2,mn,surface_emis, water_emis, ice_emis, desert_emis, grass_emis)
-  !  This subroutine is made by UM team on Dec.15, 2019
+  !  This subroutine is made by U-MICH team on Dec.15, 2019
   !  This subroutine is to read surface emissivity from dataset
 
       use netcdf
@@ -1169,7 +1168,7 @@ CONTAINS
   end subroutine read_surface_emis
 
   subroutine get_Ts_from_LW_emis(v1, emis, LW, LWdown, v1_num, nguass_point, Ts)
-  !  This subroutine is made by UM team on Dec.15, 2019
+  !  This subroutine is made by U-MICH team on Dec.15, 2019
   !  This subroutine is to obtain the Ts that can give the right upward LW
   ! flux with given band-averaged surface emissivity
   ! Input variables:
@@ -1287,7 +1286,7 @@ CONTAINS
 
 
   subroutine gaulegf(x1, x2, n, x, w)
-  !  This subroutine is added by UM team on Dec.15, 2019
+  !  This subroutine is added by U-MICH team on Dec.15, 2019
   !  This subroutine is for Gauss Legendre integration
  
   ! gauleg.f90     P145 Numerical Recipes in Fortran
@@ -1329,7 +1328,7 @@ CONTAINS
  end subroutine gaulegf
 
  function  planck(freq,temp)
- !  This function is added by UM team on Dec.15, 2019
+ !  This function is added by U-MICH team on Dec.15, 2019
  !  This function is to compute blackbody thermal emission based on a temperature
  ! freq in wavenumber, temp in Kelvin degree and
  ! radiance in 1e-3 W per square meter per sr per wavenumber

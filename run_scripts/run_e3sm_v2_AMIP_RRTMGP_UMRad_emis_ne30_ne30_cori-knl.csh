@@ -23,11 +23,11 @@
 ###===================================================================
 
 ### BASIC INFO ABOUT RUN
-set job_name       = E3SM_v2_alpha_AMIP_RRTMGP_UMRad_restart_debug
+set job_name       = E3SM_v2_alpha_AMIP_RRTMGP_UMRad_restart_addvar2_debug
 set compset        = FC5AV1C-04P2
 set resolution     = ne30_ne30
 set machine        = cori-knl
-set walltime       = 03:00:00
+set walltime       = 00:30:00
 setenv project       m2136
 
 ### SOURCE CODE OPTIONS
@@ -67,9 +67,9 @@ set short_term_archive_root_dir = ${e3sm_simulations_dir}/${case_name}/archive
 
 ## 5-day test simulation
 set stop_units       = ndays
-set stop_num         = 3
+set stop_num         = 2
 set restart_units    = $stop_units
-set restart_num      = $stop_num
+set restart_num      = 1
 
 ## Multi-year simulation
 #set stop_units       = nyears

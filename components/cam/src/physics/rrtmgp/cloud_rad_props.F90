@@ -311,7 +311,7 @@ end subroutine get_ice_optics_lw
 ! U-MICH added. Computing MC6 longwave scattering.
 subroutine get_ice_optics_lw_scat(state, pbuf, tau, tau_w, tau_w_g, tau_w_f)
 !-----------------------------------------------------
-! added by UM team on Dec.18
+! added by U-MICH team on Dec.18
 !
 ! Description:
 !   MC6 ice cloud optics scheme. Ref: Kuo et al. (2020, JQSRT, https://doi.org/10.1016/j.jqsrt.2019.106683)

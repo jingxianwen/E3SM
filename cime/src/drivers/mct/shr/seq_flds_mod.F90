@@ -3318,7 +3318,7 @@ contains
     ! if carma_flds are specified then setup fields for CLM to CAM communication
     !-----------------------------------------------------------------------------
 
-    !!!!!!!!!!!!! added by UM team on Dec.15, 2019 !!!!!!!!!!!!!!!
+    !!!!!!!!!!!!! added by U-MICH team on Dec.15, 2019 !!!!!!!!!!!!!!!
     ! leaf area index
     call seq_flds_add(l2x_states,"Sl_tlai")
     call seq_flds_add(x2a_states,"Sl_tlai")
