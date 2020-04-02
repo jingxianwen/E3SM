@@ -968,6 +968,7 @@ contains
       use aer_rad_props, only: aer_rad_props_sw
       use radconstants, only: nswbands
       use mo_optical_props, only: ty_optical_props_2str
+      use cam_logfile,     only: iulog  !test xianwen. U-MICH.
       integer, intent(in) :: icall
       type(physics_state), intent(in) :: state
       type(physics_buffer_desc), pointer :: pbuf(:)
@@ -1042,6 +1043,12 @@ contains
             optics_out%tau(icol,ilay,:) = reordered(optics_out%tau(icol,ilay,:), map_rrtmg_to_rrtmgp_swbands)
             optics_out%ssa(icol,ilay,:) = reordered(optics_out%ssa(icol,ilay,:), map_rrtmg_to_rrtmgp_swbands)
             optics_out%g(icol,ilay,:) = reordered(optics_out%g(icol,ilay,:), map_rrtmg_to_rrtmgp_swbands)
+            ! test Xianwen, U-MICH
+            if (maxval(optics_out%g(icol,ilay,:)) > 1.0 .or. minval(optics_out%g(icol,ilay,:)) < -1.0) then 
+                    write(iulog,*) "xianwen test: aerosol g=",optics_out%g(icol,ilay,:)
+                    write(iulog,*) "xianwen test: aerosol tau=",optics_out%tau(icol,ilay,:)
+                    write(iulog,*) "xianwen test: aerosol ssa=",optics_out%ssa(icol,ilay,:)
+            end if
          end do
       end do
 

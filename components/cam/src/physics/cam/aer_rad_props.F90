@@ -271,9 +271,37 @@ subroutine aer_rad_props_sw(list_idx, state, pbuf,  nnite, idxnite, is_cmip6_vol
       tau_w_f(1:ncol,:,:) = 0._r8
    end if
 
+   !test xianwen. U-MICH.
+   do icol=1,ncol
+     do k=0,pver
+        if (maxval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) >1.0 .or.   &  
+            minval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) <-1.0)  then
+            write(iulog,*) "xianwen (aer_rad_props:modal): g=",tau_w_g(icol,k,:)/tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:modal): tau=",tau(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:modal): tau_w=",tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:modal): tau_w_g=",tau_w_g(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:modal): tau_w_f=",tau_w_f(icol,k,:) 
+        endif
+     enddo
+   enddo
+
    if (is_cmip6_volc) then
       !update tau, tau_w, tau_w_g, and tau_w_f with the read in values of extinction, ssa and asymmetry factors
       call volcanic_cmip_sw(state, pbuf, trop_level, ext_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f)
+   !test xianwen. U-MICH.
+   do icol=1,ncol
+     do k=0,pver
+        if (maxval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) >1.0 .or.   &
+            minval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) <-1.0)  then
+            write(iulog,*) "xianwen (aer_rad_props:volc): g=",tau_w_g(icol,k,:)/tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): tau=",tau(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): tau_w=",tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): tau_w_g=",tau_w_g(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): tau_w_f=",tau_w_f(icol,k,:) 
+        endif
+     enddo
+   enddo
+
    endif
 
    ! Contributions from bulk aerosols.
@@ -297,6 +325,24 @@ subroutine aer_rad_props_sw(list_idx, state, pbuf,  nnite, idxnite, is_cmip6_vol
          tau_w_g(1:ncol,1:pver,:) = tau_w_g(1:ncol,1:pver,:) + twg(1:ncol,:,:)
          tau_w_f(1:ncol,1:pver,:) = tau_w_f(1:ncol,1:pver,:) + twf(1:ncol,:,:)
 
+   !test xianwen. U-MICH.
+   do icol=1,ncol
+     do k=0,pver
+        if (maxval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) >1.0 .or.  &
+            minval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) <-1.0)  then
+            write(iulog,*) "xianwen (aer_rad_props:hygro): g=",tau_w_g(icol,k,:)/tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:hygro): tau=",tau(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:hygro): tau_w=",tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:hygro): tau_w_g=",tau_w_g(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:hygro): tau_w_f=",tau_w_f(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:hygro): ta=",ta(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:hygro): tw=",tw(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:hygro): twg=",twg(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:hygro): twf=",twf(icol,k,:) 
+        endif
+     enddo
+   enddo
+
       case('nonhygro','insoluble ')
          ! get optical properties for non-hygroscopic aerosols
          call rad_cnst_get_aer_props(list_idx, iaerosol, sw_nonhygro_ext=n_ext, sw_nonhygro_ssa=n_ssa, sw_nonhygro_asm=n_asm)
@@ -306,6 +352,24 @@ subroutine aer_rad_props_sw(list_idx, state, pbuf,  nnite, idxnite, is_cmip6_vol
          tau_w  (1:ncol,1:pver,:) = tau_w  (1:ncol,1:pver,:) + tw (1:ncol,:,:)
          tau_w_g(1:ncol,1:pver,:) = tau_w_g(1:ncol,1:pver,:) + twg(1:ncol,:,:)
          tau_w_f(1:ncol,1:pver,:) = tau_w_f(1:ncol,1:pver,:) + twf(1:ncol,:,:)
+
+   !test xianwen. U-MICH.
+   do icol=1,ncol
+     do k=0,pver
+        if (maxval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) >1.0 .or.  &
+            minval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) <-1.0)  then
+            write(iulog,*) "xianwen (aer_rad_props:nonhygro): g=",tau_w_g(icol,k,:)/tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:nonhygro): tau=",tau(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:nonhygro): tau_w=",tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:nonhygro): tau_w_g=",tau_w_g(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:nonhygro): tau_w_f=",tau_w_f(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:nonhygro): ta=",ta(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:nonhygro): tw=",tw(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:nonhygro): twg=",twg(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:nonhygro): twf=",twf(icol,k,:) 
+          endif
+     enddo
+   enddo
 
       case('volcanic')
          ! get optical properties for volcanic aerosols
@@ -317,6 +381,24 @@ subroutine aer_rad_props_sw(list_idx, state, pbuf,  nnite, idxnite, is_cmip6_vol
          tau_w_g(1:ncol,1:pver,:) = tau_w_g(1:ncol,1:pver,:) + twg(1:ncol,:,:)
          tau_w_f(1:ncol,1:pver,:) = tau_w_f(1:ncol,1:pver,:) + twf(1:ncol,:,:)
 
+   !test xianwen. U-MICH.
+   do icol=1,ncol
+     do k=0,pver
+        if (maxval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) >1.0 .or.  &
+            minval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) <-1.0)  then
+            write(iulog,*) "xianwen (aer_rad_props:volc): g=",tau_w_g(icol,k,:)/tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): tau=",tau(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): tau_w=",tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): tau_w_g=",tau_w_g(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): tau_w_f=",tau_w_f(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): ta=",ta(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): tw=",tw(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): twg=",twg(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volc): twf=",twf(icol,k,:) 
+        endif
+     enddo
+   enddo
+
       case('volcanic_radius')
          ! get optical properties for volcanic aerosols
          call rad_cnst_get_aer_props(list_idx, iaerosol, r_sw_ext=r_ext, r_sw_scat=r_scat, r_sw_ascat=r_ascat, mu=r_mu)
@@ -325,6 +407,24 @@ subroutine aer_rad_props_sw(list_idx, state, pbuf,  nnite, idxnite, is_cmip6_vol
          tau_w  (1:ncol,1:pver,:) = tau_w  (1:ncol,1:pver,:) + tw (1:ncol,:,:)
          tau_w_g(1:ncol,1:pver,:) = tau_w_g(1:ncol,1:pver,:) + twg(1:ncol,:,:)
          tau_w_f(1:ncol,1:pver,:) = tau_w_f(1:ncol,1:pver,:) + twf(1:ncol,:,:)
+
+   !test xianwen. U-MICH.
+   do icol=1,ncol
+     do k=0,pver
+        if (maxval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) >1.0 .or.   &
+            minval(tau_w_g(icol,k,:)/tau_w(icol,k,:)) <-1.0)  then
+            write(iulog,*) "xianwen (aer_rad_props:volcradius): g=",tau_w_g(icol,k,:)/tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volcradius): tau=",tau(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volcradius): tau_w=",tau_w(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volcradius): tau_w_g=",tau_w_g(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volcradius): tau_w_f=",tau_w_f(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volcradius): ta=",ta(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volcradius): tw=",tw(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volcradius): twg=",twg(icol,k,:) 
+            write(iulog,*) "xianwen (aer_rad_props:volcradius): twf=",twf(icol,k,:) 
+        endif
+     enddo
+   enddo
 
       case('zero')
          ! no effect of "zero" aerosols, so update nothing
