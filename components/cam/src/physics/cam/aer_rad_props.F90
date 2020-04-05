@@ -281,6 +281,12 @@ subroutine aer_rad_props_sw(list_idx, state, pbuf,  nnite, idxnite, is_cmip6_vol
             write(iulog,*) "xianwen (aer_rad_props:modal): tau_w=",tau_w(icol,k,:) 
             write(iulog,*) "xianwen (aer_rad_props:modal): tau_w_g=",tau_w_g(icol,k,:) 
             write(iulog,*) "xianwen (aer_rad_props:modal): tau_w_f=",tau_w_f(icol,k,:) 
+            do iswband = 1, nswbands
+               if (tau_w_g(icol,k,iswband)/tau_w(icol,k,iswband) >1.0) then 
+                   tau_w_g(icol,k,iswband)=tau_w(icol,k,iswband)
+                   tau_w_f(icol,k,iswband)=tau_w(icol,k,iswband)
+               end if 
+            end do
         endif
      enddo
    enddo
