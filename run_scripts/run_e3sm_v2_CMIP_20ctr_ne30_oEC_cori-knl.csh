@@ -826,6 +826,9 @@ else
   $xmlchange_exe --id CAM_CONFIG_OPTS --append --val='-cosp'
 endif
 
+## Chris Golaz: switch to rrtmgp
+$xmlchange_exe --append CAM_CONFIG_OPTS='-rad rrtmgp'
+
 #===========================
 # SET THE PARTITION OF NODES
 #===========================
