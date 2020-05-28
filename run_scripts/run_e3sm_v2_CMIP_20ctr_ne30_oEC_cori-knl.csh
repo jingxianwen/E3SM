@@ -23,11 +23,11 @@
 ###===================================================================
 
 ### BASIC INFO ABOUT RUN
-set job_name       = E3SM_v2_UMRad_CMIP6_20TRS
+set job_name       = E3SM_v2_alpha_CMIP_20TRS_RRTMGP_UMRad_debug
 set compset        = A_WCYCL20TRS_CMIP6
 set resolution     = ne30_oECv3_ICG
 set machine        = cori-knl
-set walltime       = 12:00:00
+set walltime       = 00:30:00
 setenv project       m2136
 
 ### SOURCE CODE OPTIONS
@@ -45,7 +45,7 @@ set old_executable = false      # build executable is set to 'false', reuse
 
 ### SUBMIT OPTIONS
 set submit_run       = true     # submit experiment after successful build
-set debug_queue      = false     # submit to debug queue?
+set debug_queue      = true     # submit to debug queue?
 
 ### PROCESSOR CONFIGURATION
 set processor_config = L        # PE count: S (39 nodes), L (285 nodes)
@@ -57,7 +57,7 @@ set run_refcase = 20171228.beta3rc13_1850.ne30_oECv3_ICG.edison
 set run_refdate = 0331-01-01
 
 ### DIRECTORIES
-set code_root_dir               = ~/model/E3SM_v2_UMRad
+set code_root_dir               = ~/model_orig/E3SM_v2_alpha
 set e3sm_simulations_dir        = /global/cscratch1/sd/$USER/E3SM_simulations
 set case_build_dir              = ${e3sm_simulations_dir}/${case_name}/build
 set case_run_dir                = ${e3sm_simulations_dir}/${case_name}/run
@@ -66,18 +66,18 @@ set short_term_archive_root_dir = ${e3sm_simulations_dir}/${case_name}/archive
 ### LENGTH OF SIMULATION, RESTARTS, AND ARCHIVING
 
 ## 5-day test simulation
-#set stop_units       = ndays
-#set stop_num         = 1
-#set restart_units    = $stop_units
-#set restart_num      = $stop_num
+set stop_units       = nhours
+set stop_num         = 3
+set restart_units    = $stop_units
+set restart_num      = $stop_num
 
 ## Multi-year simulation
-set stop_units       = nyears
-set stop_num         = 1
-set restart_units    = nyears
-set restart_num      = 1
+#set stop_units       = nyears
+#set stop_num         = 1
+#set restart_units    = nyears
+#set restart_num      = 1
 
-set num_resubmits    = 20
+set num_resubmits    = 0
 set do_short_term_archiving      = false
 
 ### SIMULATION OPTIONS
@@ -923,11 +923,15 @@ $xmlchange_exe --id DEBUG --val `uppercase $debug_compile`
 # NOTE: $atm_output_freq and $records_per_atm_output_file are so commonly used, that they are set in the options at the top of this script.
 
 cat <<EOF >> user_nl_cam
- nhtfrq = 0
+ nhtfrq = -1
  mfilt  = 1
  avgflag_pertape = 'A'
  fincl1 = 'FLDSC'
  empty_htapes = .false.
+ flag_mc6=.true.
+ flag_rtr2=.true.
+ flag_scat=.true.
+ flag_emis=.true.
 EOF
 
 #cat <<EOF >> user_nl_clm
